@@ -1,0 +1,16 @@
+# Render Blueprint — static site, no build step.
+# Render > New > Blueprint > pick this repo, or create a Static Site by hand
+# with Build Command empty and Publish Directory "." (same result).
+services:
+  - type: web
+    name: management-iot-oee
+    runtime: static
+    buildCommand: echo "Static site, no build step"
+    staticPublishPath: .
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: no-cache
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
