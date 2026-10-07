@@ -396,6 +396,51 @@ td a:hover, .link:hover { text-decoration: underline; }
 
 .plan-grid { grid-template-columns: minmax(200px, 240px) minmax(0, 1fr); }
 @media (max-width: 900px) { .plan-grid { grid-template-columns: 1fr; } }
+
+/* machine health */
+.sec-title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; margin: 4px 0 12px; }
+.sec-title svg { width: 17px; height: 17px; color: var(--accent); }
+.sec-title .hint, .card-head .sec-title .hint { font-size: 12px; font-weight: 400; color: var(--muted); }
+.stat { display: flex; flex-direction: column; gap: 4px; }
+.stat h3 { font-size: 13.5px; font-weight: 600; }
+.stat b { font-family: var(--font-data); font-size: 44px; font-weight: 600; line-height: 1.1; margin-top: auto; }
+.stat span { font-size: 12px; color: var(--muted); }
+.sensor-tile { display: flex; flex-direction: column; gap: 8px; }
+.sensor-tile .card-head { margin-bottom: 0; }
+.sensor-tile h3 { font-size: 13.5px; }
+.sv { display: flex; align-items: baseline; gap: 6px; }
+.sv b { font-family: var(--font-data); font-size: 28px; font-weight: 600; letter-spacing: -.02em; }
+.sv span { color: var(--muted); font-size: 13px; }
+.slim { font-family: var(--font-data); font-size: 11.5px; color: var(--faint); }
+.sbar { position: relative; height: 8px; border-radius: 99px; box-shadow: var(--inset-sm); margin: 4px 0; }
+.sbar i { position: absolute; top: -2px; bottom: -2px; width: 2px; border-radius: 2px; opacity: .8; }
+.sbar b { position: absolute; top: 50%; width: 14px; height: 14px; border-radius: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 0 3px var(--bg); transition: left .6s; }
+.meter { height: 7px; border-radius: 99px; box-shadow: var(--inset-sm); overflow: hidden; flex: 1; min-width: 60px; }
+.meter i { display: block; height: 100%; border-radius: 99px; transition: width .6s; }
+.meter i.good { background: var(--good); } .meter i.warn { background: var(--warn); } .meter i.crit { background: var(--crit); }
+.hcard { border: 0; text-align: left; font: inherit; color: inherit; cursor: pointer; display: flex; flex-direction: column; gap: 12px; transition: transform .15s; }
+.hcard:hover { transform: translateY(-2px); }
+.hcard:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.hc-top { display: flex; align-items: center; gap: 16px; }
+.hc-top .gauge { width: 96px; max-width: 96px; flex: none; margin: 0; }
+.hc-top .gauge .val b { font-size: 22px; }
+.hc-top .gauge .val span { font-size: 9px; }
+.hc-top > div:last-child { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.hc-top > div:last-child > span { font-size: 12px; color: var(--muted); }
+.hc-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; font-size: 12.5px; color: var(--muted); }
+.hc-list li { display: flex; align-items: center; gap: 8px; }
+.hc-list li svg { width: 15px; height: 15px; flex: none; color: var(--faint); }
+.hc-list b { color: var(--text); font-family: var(--font-data); font-weight: 500; }
+.mcount { display: grid; gap: 6px; margin-bottom: 14px; }
+.mcount span { display: flex; justify-content: space-between; gap: 10px; font-size: 12.5px; color: var(--muted); flex-wrap: wrap; }
+.mcount b { color: var(--text); font-weight: 500; }
+.mcount small { font-size: 11.5px; color: var(--faint); }
+.acts-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; font-size: 13px; }
+.acts-list li { display: flex; gap: 9px; align-items: flex-start; padding: 9px 11px; border-radius: var(--r-sm); }
+.acts-list li svg { width: 16px; height: 16px; flex: none; margin-top: 2px; }
+.acts-list li.crit { background: var(--crit-soft); } .acts-list li.crit svg { color: var(--crit); }
+.acts-list li.warn { background: var(--warn-soft); } .acts-list li.warn svg { color: var(--warn); }
+.acts-list li.good { background: var(--good-soft); } .acts-list li.good svg { color: var(--good); }
 .import-drop { padding: 22px; border-radius: var(--r-md); box-shadow: var(--inset); text-align: center; color: var(--muted); display: grid; gap: 10px; justify-items: center; }
 
 @media print {

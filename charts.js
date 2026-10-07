@@ -9,7 +9,7 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 const Charts = {
   levelVar(v) { return v == null ? '--idle' : v >= 0.85 ? '--good' : v >= 0.6 ? '--warn' : '--crit'; },
 
-  gauge(v, label) {
+  gauge(v, label, text) {
     const r = 42, c = 2 * Math.PI * r;
     const pct = v == null ? 0 : Math.max(0, Math.min(1, v));
     const col = this.levelVar(v);
@@ -18,7 +18,7 @@ const Charts = {
         <circle cx="50" cy="50" r="${r}" style="fill:none;stroke:var(--line);stroke-width:7"/>
         <circle cx="50" cy="50" r="${r}" transform="rotate(-90 50 50)" style="fill:none;stroke:var(${col});stroke-width:7;stroke-linecap:round;stroke-dasharray:${(pct * c).toFixed(1)} ${c.toFixed(1)};transition:stroke-dasharray .6s"/>
       </svg>
-      <div class="val"><b style="color:var(${col})">${v == null ? '–' : (v * 100).toFixed(1) + '%'}</b><span>${esc(label)}</span></div>
+      <div class="val"><b style="color:var(${col})">${text ?? (v == null ? '–' : (v * 100).toFixed(1) + '%')}</b><span>${esc(label)}</span></div>
     </div>`;
   },
 
@@ -125,6 +125,37 @@ const Charts = {
       });
     });
     return `<svg viewBox="0 0 ${W} ${H}" role="img">${g}</svg>`;
+  },
+
+  /* sensor trend with shaded warning / critical zones. pts: [{t, v}], s: sensor {warn, crit, dir, unit, dec} */
+  trend(pts, s, { W = 520, H = 190 } = {}) {
+    const vals = pts.map(p => p.v).filter(v => v != null);
+    if (!vals.length) return `<div class="chart-empty">No readings in this period.</div>`;
+    const lims = [s.warn, s.crit].filter(v => v != null);
+    let lo = Math.min(...vals, ...lims), hi = Math.max(...vals, ...lims);
+    const padY = (hi - lo) * 0.08 || 1; lo -= padY; hi += padY;
+    const L = 52, R = 12, T = 10, B = 24, w = W - L - R, h = H - T - B;
+    const t0 = pts[0].t, t1 = pts[pts.length - 1].t;
+    const x = t => L + (t1 === t0 ? w / 2 : (t - t0) / (t1 - t0) * w);
+    const y = v => T + h - (v - lo) / (hi - lo) * h;
+    const dec = hi - lo < 2 ? 2 : hi - lo < 20 ? 1 : 0;
+    let g = '';
+    if (s.warn != null && s.crit != null) {
+      const zone = (a, b, c) => { const ya = y(a), yb = y(b); g += `<rect x="${L}" y="${Math.min(ya, yb)}" width="${w}" height="${Math.abs(ya - yb)}" style="fill:var(${c})"/>`; };
+      if (s.dir === 'lo') { zone(s.warn, s.crit, '--warn-soft'); zone(s.crit, lo, '--crit-soft'); } else { zone(s.warn, s.crit, '--warn-soft'); zone(s.crit, hi, '--crit-soft'); }
+    }
+    for (let i = 0; i <= 4; i++) { const v = lo + (hi - lo) * i / 4, yy = y(v); g += `<line class="grid-line" x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}"/><text x="${L - 8}" y="${yy + 3.5}" text-anchor="end">${fmtNum(v, dec)}</text>`; }
+    const n = Math.max(2, Math.floor(w / 100));
+    for (let i = 0; i <= n; i++) { const t = t0 + (t1 - t0) * i / n; g += `<text x="${x(t)}" y="${H - 6}" text-anchor="${i === 0 ? 'start' : i === n ? 'end' : 'middle'}">${this.timeLabel(t, (t1 - t0) / n)}</text>`; }
+    [[s.warn, '--warn', 'Warning'], [s.crit, '--crit', 'Critical']].forEach(([v, c, l]) => { if (v == null) return; g += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" style="stroke:var(${c});stroke-dasharray:5 4;stroke-width:1.2"/><text x="${W - R - 4}" y="${y(v) - 4}" text-anchor="end" style="fill:var(${c})">${l} ${fmtNum(v, s.dec)}</text>`; });
+    let d = '', pen = false;
+    pts.forEach(p => { if (p.v == null) { pen = false; return; } d += `${pen ? 'L' : 'M'}${x(p.t).toFixed(1)},${y(p.v).toFixed(1)}`; pen = true; });
+    g += `<path d="${d}" style="fill:none;stroke:var(--accent);stroke-width:1.8;stroke-linejoin:round"/>`;
+    const last = [...pts].reverse().find(p => p.v != null);
+    g += `<circle cx="${x(last.t)}" cy="${y(last.v)}" r="3.5" style="fill:var(--accent);stroke:var(--bg);stroke-width:2"/>`;
+    const bw = w / Math.max(1, pts.length - 1);
+    pts.forEach(p => { g += `<rect x="${x(p.t) - bw / 2}" y="${T}" width="${bw}" height="${h}" style="fill:transparent"><title>${esc(`${fmtDT(p.t)}\n${s.name}: ${p.v == null ? '–' : fmtNum(p.v, s.dec) + ' ' + s.unit}`)}</title></rect>`; });
+    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(s.name)} trend">${g}</svg>`;
   },
 
   spark(values, color, { W = 220, H = 44 } = {}) {

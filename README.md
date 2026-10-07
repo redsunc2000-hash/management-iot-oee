@@ -18,9 +18,10 @@ After login, choose **Production Monitoring**.
 
 ## Features
 
-- **View mode**: Overview, Plant Layout, Availability, Performance, Quality, Benchmark, Job Tracking, Loss, Alarm, Machine Detail, Daily Report
+- **View mode**: Overview, Plant Layout, Availability, Performance, Quality, Benchmark, Job Tracking, Loss, Alarm, Machine Detail, Machine Health, Daily Report
 - **Operation mode**: turn machines on/off with a reason, count good/bad parts, edit availability/performance/quality history
-- **Admin mode**: Asset (with CSV import), Role (menu + asset permissions), User, Plan Production (weekly shift + daily override), Reason, Job, Alarm rules, Banner, Line Notify, Access Log
+- **Admin mode**: Asset (with CSV import), Role (menu + asset permissions), User, Plan Production (weekly shift + daily override), Reason, Job, Alarm rules, Sensor (limits + maintenance plan), Banner, Line Notify, Access Log
+- **Machine Health**: sensors chosen per machine type (vibration, motor/oil/barrel/mold/oven temperature, current, hydraulic and air pressure, web tension, ultrasonic frequency, pressure decay, power) plus room temperature, humidity and PM2.5 per line; health score, sensor alarms, time-to-limit prediction, PM and tool-wear counters, energy per piece, maintenance log
 - Live alarms (ticker, toasts, sidebar warning icons), CSV export, print to PDF
 - Neumorphic white/blue theme with dark mode (theme button in the top bar)
 
@@ -66,5 +67,6 @@ You can also use **New → Blueprint**, which reads `render.yaml`.
 | `style.css` | Theme and layout |
 | `data.js` | Seed data, machine simulation, OEE calculations |
 | `charts.js` | SVG charts (no library) |
+| `health.js` | Sensor simulation, health score, prediction, maintenance counters |
 | `app.js` | Screens, permissions, forms, tables |
 | `render.yaml` | Render static-site blueprint |

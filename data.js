@@ -9,7 +9,7 @@
 'use strict';
 
 const HOUR = 3600e3, DAY = 864e5, HISTORY_DAYS = 31;
-const STORE_KEY = 'oee-demo-config-v2';
+const STORE_KEY = 'oee-demo-config-v3';
 
 /* ---------- small utils ---------- */
 function mulberry32(a) {
@@ -125,7 +125,7 @@ function seedConfig() {
   ];
   const stamp = { createdBy: 'admin', createdAt: today - 120 * DAY, updatedBy: 'admin', updatedAt: today - 30 * DAY };
   [assets, reasons, roles, users, alarmRules, banners].forEach(list => list.forEach(x => Object.assign(x, { ...stamp, ...x })));
-  return { version: 2, assets, reasons, roles, users, plans, jobs, alarmRules, banners, lineNotify };
+  return { version: 3, assets, reasons, roles, users, plans, jobs, alarmRules, banners, lineNotify, ...Health.seed(assets) };
 }
 
 const MENU_KEYS = [
@@ -133,14 +133,14 @@ const MENU_KEYS = [
     { key: 'overview', label: 'Overview' }, { key: 'plant_layout', label: 'Plant Layout' }, { key: 'availability', label: 'Availability' },
     { key: 'performance', label: 'Performance' }, { key: 'quality', label: 'Quality' }, { key: 'benchmark', label: 'Benchmark' },
     { key: 'job_tracking', label: 'Job Tracking' }, { key: 'loss', label: 'Loss' }, { key: 'alarm', label: 'Alarm' },
-    { key: 'machine_detail', label: 'Machine Detail' }, { key: 'daily_report', label: 'Daily Report' }] },
+    { key: 'machine_detail', label: 'Machine Detail' }, { key: 'machine_health', label: 'Machine Health' }, { key: 'daily_report', label: 'Daily Report' }] },
   { group: 'Operation mode', mode: 'operation', items: [
     { key: 'operation_input', label: 'Operation Input' }, { key: 'availability_history', label: 'Availability History' },
     { key: 'performance_history', label: 'Performance History' }, { key: 'quality_history', label: 'Quality History' }] },
   { group: 'Admin mode', mode: 'admin', items: [
     { key: 'asset', label: 'Asset' }, { key: 'role', label: 'Role' }, { key: 'user', label: 'User' },
     { key: 'plan_production', label: 'Plan Production' }, { key: 'reason', label: 'Reason' }, { key: 'job', label: 'Job' },
-    { key: 'alarm_setup', label: 'Alarm' }, { key: 'banner', label: 'Banner' }, { key: 'line_notify', label: 'Line Notify' },
+    { key: 'alarm_setup', label: 'Alarm' }, { key: 'sensor_setup', label: 'Sensor' }, { key: 'banner', label: 'Banner' }, { key: 'line_notify', label: 'Line Notify' },
     { key: 'access_log', label: 'Access Log' }] },
 ];
 
@@ -149,7 +149,7 @@ const DB = {
   cfg: null,
   load() {
     try { const raw = localStorage.getItem(STORE_KEY); if (raw) { this.cfg = JSON.parse(raw); } } catch (e) { /* storage unavailable */ }
-    if (!this.cfg || this.cfg.version !== 2) this.cfg = seedConfig();
+    if (!this.cfg || this.cfg.version !== 3) this.cfg = seedConfig();
     this.index();
   },
   save() { this.index(); try { localStorage.setItem(STORE_KEY, JSON.stringify(this.cfg)); } catch (e) { /* quota or blocked */ } },

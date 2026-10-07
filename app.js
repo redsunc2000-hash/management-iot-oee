@@ -49,6 +49,9 @@ const ICON = {
   reset: '<path d="M4 12a8 8 0 1 0 3-6.2L4 8"/><path d="M4 3v5h5"/>',
   check: '<path d="M5 12l5 5 9-10"/>',
   factory: '<path d="M3 21V10l6 4V10l6 4V6l6 4v11z"/>',
+  pulse: '<path d="M3 12h4l2-5 4 10 2-5h6"/>',
+  sensor: '<circle cx="12" cy="12" r="2"/><path d="M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8"/>',
+  wrench: '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/>',
 };
 const ic = n => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[n] || ''}</svg>`;
 
@@ -64,6 +67,7 @@ const PAGES = {
   loss: { mode: 'view', label: 'Loss', icon: 'loss' },
   alarm: { mode: 'view', label: 'Alarm', icon: 'bell' },
   machine_detail: { mode: 'view', label: 'Machine Detail', icon: 'cpu' },
+  machine_health: { mode: 'view', label: 'Machine Health', icon: 'pulse' },
   daily_report: { mode: 'view', label: 'Daily Report', icon: 'report' },
   operation_input: { mode: 'operation', label: 'Operation Input', icon: 'sliders' },
   availability_history: { mode: 'operation', label: 'Availability History', icon: 'clock' },
@@ -76,6 +80,7 @@ const PAGES = {
   reason: { mode: 'admin', label: 'Reason', icon: 'tag' },
   job: { mode: 'admin', label: 'Job', icon: 'job' },
   alarm_setup: { mode: 'admin', label: 'Alarm', icon: 'bell' },
+  sensor_setup: { mode: 'admin', label: 'Sensor', icon: 'sensor' },
   banner: { mode: 'admin', label: 'Banner', icon: 'image' },
   line_notify: { mode: 'admin', label: 'Line Notify', icon: 'msg' },
   access_log: { mode: 'admin', label: 'Access Log', icon: 'log' },
@@ -90,7 +95,7 @@ const S = {
   tables: {}, sel: {}, closed: new Set(), menuOpen: false, sideOpen: false,
   layoutFull: true, lossType: 'overall', lossBy: 'machine', lossTop: 5,
   opMachine: null, opQty: 1, opMode: 'pq', benchIds: null,
-  planAsset: 'p1', planMonth: startOfDay(now0), clip: null, search: {},
+  planAsset: 'p1', planMonth: startOfDay(now0), clip: null, search: {}, hRange: '24h', sensorAsset: '',
   theme: (() => { try { return localStorage.getItem('oee-demo-theme') || 'system'; } catch (e) { return 'system'; } })(),
 };
 const app = document.getElementById('app');
@@ -363,7 +368,7 @@ function treeHTML() {
     const open = q || !S.closed.has(a.id);
     const lvl = assetLevel(a.id);
     let warn = '';
-    if (a.isMachine && Sim.data.has(a.id)) { const st = Sim.status(a.id); if (st === 'warn' || st === 'crit') warn = `<span class="warn-ico" style="color:var(--${st})" title="${st === 'crit' ? 'Critical' : 'Warning'}: ${esc(DB.reason(Sim.current(a.id).reasonId)?.name || '')}">${ic('warn')}</span>`; }
+    if (a.isMachine && Sim.data.has(a.id)) { const st = Sim.status(a.id); if (st === 'warn' || st === 'crit') warn = `<span class="warn-ico" style="color:var(--${st})" title="${st === 'crit' ? 'Critical' : 'Warning'}: ${esc(DB.reason(Sim.current(a.id).reasonId)?.name || '')}">${ic('warn')}</span>`; else { const hh = Health.machine(a.id); if (hh.st !== 'good') warn = `<span class="warn-ico" style="color:var(--${hh.st})" title="Health ${hh.score}${hh.worst ? ': ' + esc(hh.worst.name) : ''}">${ic('pulse')}</span>`; } }
     return `<div role="treeitem" aria-expanded="${kids.length ? open : ''}"><button class="tree-node ${S.assetId === a.id ? 'sel' : ''}" style="padding-left:${8 + depth * 13}px" data-act="${lvl === 'deny' ? 'noop' : 'scope'}" data-arg="${a.id}" ${lvl === 'deny' ? 'aria-disabled="true" title="No access"' : ''}>
       <span class="tw ${open ? 'open' : ''}" data-act="${kids.length ? 'twist' : 'noop'}" data-arg="${a.id}">${kids.length ? ic('chev') : ''}</span>
       ${warn}<span class="nm" title="${esc(a.name)} (${esc(a.code)})">${esc(a.name)}</span></button>
@@ -381,7 +386,7 @@ function tickerHTML() {
 
 /* ---------- page dispatcher ---------- */
 function pageHTML() {
-  const fn = { overview: pOverview, plant_layout: pLayout, availability: pAvail, performance: pPerf, quality: pQuality, benchmark: pBench, job_tracking: pJobTrack, loss: pLoss, alarm: pAlarm, machine_detail: pMachine, daily_report: pDaily, operation_input: pOpInput, availability_history: pAvailHist, performance_history: pPerfHist, quality_history: pQualHist, asset: pAsset, role: pRole, user: pUser, plan_production: pPlan, reason: pReason, job: pJob, alarm_setup: pAlarmSetup, banner: pBanner, line_notify: pLineNotify, access_log: pAccessLog }[S.page];
+  const fn = { overview: pOverview, plant_layout: pLayout, availability: pAvail, performance: pPerf, quality: pQuality, benchmark: pBench, job_tracking: pJobTrack, loss: pLoss, alarm: pAlarm, machine_detail: pMachine, machine_health: pHealth, daily_report: pDaily, operation_input: pOpInput, availability_history: pAvailHist, performance_history: pPerfHist, quality_history: pQualHist, asset: pAsset, role: pRole, user: pUser, plan_production: pPlan, reason: pReason, job: pJob, alarm_setup: pAlarmSetup, sensor_setup: pSensor, banner: pBanner, line_notify: pLineNotify, access_log: pAccessLog }[S.page];
   try { return fn ? fn() : ''; } catch (e) { console.error(e); return `<div class="card">Something went wrong on this page: ${esc(e.message)}</div>`; }
 }
 function head(title, extra = '', sub = '') {
@@ -612,7 +617,7 @@ function pAlarm() {
   const all = alarmScoped();
   const open = all.filter(a => !a.ackBy).sort((a, b) => b.at - a.at);
   const hist = all.filter(a => a.at >= f && a.at < t).sort((a, b) => b.at - a.at);
-  const sum = list => `${pill('warn', `Warning ${list.filter(a => a.severity === 'warning').length}`)} ${pill('crit', `Critical ${list.filter(a => a.severity === 'critical').length}`)} ${pill('idle', `Job ${list.filter(a => a.type === 'job').length}`)} ${pill('idle', `Machine ${list.filter(a => a.type === 'machine').length}`)}`;
+  const sum = list => `${pill('warn', `Warning ${list.filter(a => a.severity === 'warning').length}`)} ${pill('crit', `Critical ${list.filter(a => a.severity === 'critical').length}`)} ${pill('idle', `Job ${list.filter(a => a.type === 'job').length}`)} ${pill('idle', `Machine ${list.filter(a => a.type === 'machine').length}`)}  ${pill('idle', `Sensor ${list.filter(a => a.type === 'sensor').length}`)}`;
   const cols = [{ h: 'Datetime', f: a => `<span class="mono">${fmtDT(a.at)}</span>` }, { h: 'Alarm Name', f: a => esc(a.name) }, { h: 'Severity', f: a => sevPill(a.severity) }, { h: 'Type', f: a => esc(a.type) }, { h: 'Asset / Job Name', f: a => esc(DB.asset(a.assetId)?.name) }, { h: 'Description', f: a => esc(a.desc) }];
   const canAck = canEdit('alarm');
   const ackCol = { h: 'Action', cls: 'num', f: a => canAck ? `<button class="btn sm" data-act="ack" data-arg="${a.id}">Acknowledge</button>` : '' };
@@ -642,11 +647,109 @@ function pMachine() {
   return head('Machine Detail') + filters() +
     `<div class="card" style="margin-bottom:20px"><div class="card-head"><h3>Machine Information</h3></div>${table('mach-info', [
       { h: 'Machine Name', f: m => `<button class="link" data-act="scope" data-arg="${m.id}">${esc(m.name)}</button>` }, { h: 'Status', f: m => statusPill(m.st) },
-      { h: 'OEE', cls: 'num', f: m => `<span style="color:var(${Charts.levelVar(m.OEE)})">${fmtPct(m.OEE)}</span>` }, { h: 'Availability', cls: 'num', f: m => fmtPct(m.A) }, { h: 'Performance', cls: 'num', f: m => fmtPct(m.P) }, { h: 'Quality', cls: 'num', f: m => fmtPct(m.Q) }], mrows, { pageSize: 8 })}</div>
+      { h: 'OEE', cls: 'num', f: m => `<span style="color:var(${Charts.levelVar(m.OEE)})">${fmtPct(m.OEE)}</span>` }, { h: 'Availability', cls: 'num', f: m => fmtPct(m.A) }, { h: 'Performance', cls: 'num', f: m => fmtPct(m.P) }, { h: 'Quality', cls: 'num', f: m => fmtPct(m.Q) }, { h: 'Health', cls: 'num', f: m => { const hh = Health.machine(m.id); return `<button class="link" data-act="scope-go" data-arg="${m.id}" data-page="machine_health" style="color:var(--${hh.st})">${hh.score}</button>`; } }], mrows, { pageSize: 8 })}</div>
     <div class="card" style="margin-bottom:20px"><div class="card-head"><h3>Overall OEE History</h3>${Charts.legend(SERIES)}${csvBtn('export', 'mo')}</div>${chart(W => Charts.area(pts, SERIES, { W, H: 230, size }))}</div>
     <div class="card" style="margin-bottom:20px"><div class="card-head"><h3>Availability Timeline</h3>${csvBtn('export', 'mt')}</div>${chart(W => Charts.timeline(tl, f, t, { W }))}</div>
     <div class="grid g2"><div class="card"><div class="card-head"><h3>Availability Top Reason <span class="hint">minutes</span></h3>${csvBtn('export', 'mar')}</div>${chart(W => Charts.bars(ar, { W, fmt: v => fmtNum(v, 0) }))}</div>
       <div class="card"><div class="card-head"><h3>Quality Top Reason <span class="hint">pcs</span></h3>${csvBtn('export', 'mqr')}</div>${chart(W => Charts.bars(qr, { W }))}</div></div>`;
+}
+
+/* ---------- machine health (condition monitoring) ---------- */
+const H_RANGE = { '1h': HOUR, '24h': DAY, '7d': 7 * DAY };
+const LVL = ['good', 'warn', 'crit'];
+const lvlPill = l => pill(LVL[l], ['Normal', 'Warning', 'Critical'][l]);
+const healthPill = st => pill(st, { good: 'Healthy', warn: 'Watch', crit: 'Act now' }[st]);
+const limTxt = s => s.warn == null ? 'Monitoring only' : `Normal ${fmtNum(s.nom, s.dec)} · Warn ${s.dir === 'lo' ? '≤' : '≥'} ${fmtNum(s.warn, s.dec)} · Crit ${s.dir === 'lo' ? '≤' : '≥'} ${fmtNum(s.crit, s.dec)}`;
+function meter(pct, cls) { return `<div class="meter"><i class="${cls}" style="width:${Math.min(100, Math.max(2, pct * 100))}%"></i></div>`; }
+function sensorTile(s, from, to) {
+  const d = Health.gen(s); const col = s.warn == null ? '--accent' : `--${LVL[d.lvl]}`;
+  const { pts } = Health.series(s, from, to);
+  const p = Health.pos(s, Health.now(s));
+  const bar = s.warn == null ? '' : `<div class="sbar" aria-hidden="true"><i style="left:${(1 / 2.4) * 100}%;background:var(--warn)"></i><i style="left:${(2 / 2.4) * 100}%;background:var(--crit)"></i><b style="left:${Math.min(100, Math.max(0, p / 2.4 * 100))}%;background:var(${col})"></b></div>`;
+  return `<div class="card sensor-tile"><div class="card-head"><h3>${esc(s.name)}</h3>${s.warn == null ? pill('idle', 'Info') : lvlPill(d.lvl)}</div>
+    <div class="sv"><b style="color:var(${col})">${fmtNum(d.cur, s.dec)}</b><span>${esc(s.unit)}</span></div>${bar}
+    <div class="slim">${limTxt(s)}</div>${Charts.spark(pts.map(x => x.v), col)}</div>`;
+}
+function pHealth() {
+  const rng = `<div class="seg" role="group" aria-label="Sensor range">${[['1h', 'Last 1 hour'], ['24h', 'Last 24 hours'], ['7d', 'Last 7 days']].map(([k, l]) => `<button class="${S.hRange === k ? 'on' : ''}" data-act="h-range" data-arg="${k}">${l}</button>`).join('')}</div>`;
+  const now = Date.now(); const from = now - H_RANGE[S.hRange];
+  return scope().isMachine ? healthMachine(scope(), rng, from, now) : healthGroup(scope(), rng, from, now);
+}
+function envCards(aid, from, to) {
+  const ids = [...new Set(DB.cfg.sensors.filter(s => Health.isEnv(s) && DB.asset(s.assetId) && (DB.isUnder(s.assetId, aid) || DB.isUnder(aid, s.assetId))).map(s => s.assetId))];
+  return ids.map(id => `<h2 class="sec-title">${ic('sensor')}Room environment · ${esc(DB.asset(id).name)}</h2><div class="grid g3" style="margin-bottom:20px">${Health.sensors(id).map(s => sensorTile(s, from, to)).join('')}</div>`).join('');
+}
+function healthGroup(sc, rng, from, to) {
+  const hs = DB.machinesUnder(sc.id).filter(m => assetLevel(m.id) !== 'deny').map(m => ({ m, h: Health.machine(m.id), st: Sim.status(m.id) }));
+  const n = k => hs.filter(x => x.h.st === k).length;
+  const avg = hs.length ? hs.reduce((a, x) => a + x.h.score, 0) / hs.length : null;
+  const sensors = hs.flatMap(x => Health.sensors(x.m.id));
+  const watch = sensors.map(s => ({ id: s.id, s, d: Health.gen(s), p: Health.predict(s) })).filter(r => r.d.lvl || (r.p && r.p.hours < 14 * 24)).sort((a, b) => b.d.lvl - a.d.lvl || (a.p?.hours ?? 1e9) - (b.p?.hours ?? 1e9));
+  const cards = hs.sort((a, b) => a.h.score - b.h.score).map(({ m, h, st }) => {
+    const w = h.worst; const pr = h.preds[0]; const mt = h.maint;
+    return `<button class="card hcard" data-act="scope" data-arg="${m.id}" title="Open ${esc(m.name)}">
+      <div class="hc-top">${Charts.gauge(h.score / 100, 'Health', String(h.score))}<div><b>${esc(m.name)}</b><span>${esc(h.kind)}</span><div class="inline">${healthPill(h.st)}${statusPill(st)}</div></div></div>
+      <ul class="hc-list">
+        <li>${w ? `${ic('warn')}<span>${esc(w.name)} <b>${fmtNum(Health.now(w), w.dec)} ${esc(w.unit)}</b></span>` : `${ic('check')}<span>All sensors in normal range</span>`}</li>
+        ${pr ? `<li>${ic('loss')}<span>${esc(pr.s.name)} hits ${pr.p.to} in <b>${fmtETA(pr.p.hours)}</b></span></li>` : ''}
+        ${mt ? `<li>${ic('wrench')}<span>PM ${fmtNum(mt.runH)} / ${fmtNum(mt.pmHours)} h</span>${meter(mt.pmPct, mt.pmPct >= 1 ? 'crit' : mt.pmPct >= 0.9 ? 'warn' : 'good')}</li>` : ''}
+      </ul></button>`;
+  }).join('');
+  EXPORTS.hwatch = () => exportCSV(`Sensor_Watchlist_${sc.name}`, ['Machine', 'Sensor', 'Value', 'Unit', 'Status', 'Prediction'], watch.map(r => [DB.asset(r.s.assetId).name, r.s.name, fmtNum(r.d.ema, r.s.dec), r.s.unit, ['Normal', 'Warning', 'Critical'][r.d.lvl], r.p ? `${r.p.to} in ${fmtETA(r.p.hours)}` : '']));
+  return head('Machine Health', rng, 'Live sensor readings, health score, wear trends and maintenance counters. Click a machine for its sensors.') +
+    `<div class="grid g4" style="margin-bottom:20px">
+      <div class="card gauge-card"><h3>Average health</h3>${Charts.gauge(avg == null ? null : avg / 100, 'Health', avg == null ? '–' : String(Math.round(avg)))}<div class="gauge-meta">${hs.length} machines · ${sensors.length} sensors</div></div>
+      <div class="card stat"><h3>Healthy</h3><b style="color:var(--good)">${n('good')}</b><span>score 85 or more</span></div>
+      <div class="card stat"><h3>Watch</h3><b style="color:var(--warn)">${n('warn')}</b><span>score 60–84, plan maintenance</span></div>
+      <div class="card stat"><h3>Act now</h3><b style="color:var(--crit)">${n('crit')}</b><span>score under 60</span></div></div>
+    <div class="card" style="margin-bottom:20px"><div class="card-head"><h3>Sensor watchlist <span class="hint">over a limit, or trending to one within 14 days</span></h3>${csvBtn('export', 'hwatch')}</div>${table('hwatch', [
+      { h: 'Machine', f: r => `<button class="link" data-act="scope" data-arg="${r.s.assetId}">${esc(DB.asset(r.s.assetId).name)}</button>` }, { h: 'Sensor', f: r => esc(r.s.name) },
+      { h: 'Value', cls: 'num', f: r => `<span class="mono">${fmtNum(r.d.ema, r.s.dec)} ${esc(r.s.unit)}</span>` }, { h: 'Limit', f: r => `<span class="mono" style="font-size:12px">${limTxt(r.s)}</span>` },
+      { h: 'Status', f: r => lvlPill(r.d.lvl) }, { h: 'Prediction', f: r => r.p ? `${esc(r.p.to[0].toUpperCase() + r.p.to.slice(1))} in <b>${fmtETA(r.p.hours)}</b>` : '–' }], watch, { pageSize: 6, empty: 'All sensors are in their normal range.' })}</div>
+    ${envCards(sc.id, from, to)}
+    <h2 class="sec-title">${ic('cpu')}Machines <span class="hint">lowest health first</span></h2>
+    <div class="grid g3">${cards || '<div class="card empty">No machines in scope.</div>'}</div>`;
+}
+function healthMachine(m, rng, from, to) {
+  const h = Health.machine(m.id); const ss = Health.sensors(m.id); const mt = h.maint;
+  const acts = Health.actions(m.id);
+  const log = DB.cfg.maintLog.filter(x => x.mid === m.id).sort((a, b) => b.at - a.at);
+  const sod = startOfDay(to); const kwh = Health.energy(m.id, sod, to); const made = calc(m.id, sod, to, false).total;
+  const series = ss.map(s => ({ s, ...Health.series(s, from, to) }));
+  EXPORTS.hsens = () => exportCSV(`Sensor_Data_${m.name}`, ['Datetime', ...ss.map(s => `${s.name} (${s.unit})`)], (series[0]?.pts || []).map((p, i) => [fmtDT(p.t), ...series.map(x => x.pts[i]?.v == null ? '' : x.pts[i].v.toFixed(3))]));
+  EXPORTS.hlog = () => exportCSV(`Maintenance_Log_${m.name}`, ['Datetime', 'Type', 'Note', 'By'], log.map(x => [fmtDT(x.at), MAINT_KIND[x.kind], x.note, x.by]));
+  const rec = canEdit('machine_health') ? `<button class="btn primary" data-act="maint-rec" data-arg="${m.id}">${ic('wrench')}Record maintenance</button>` : '';
+  return head('Machine Health', rng + rec, `${esc(h.kind)} · ${ss.length} sensors · ${esc(DB.path(m.parentId))}`) +
+    `<div class="grid g3" style="margin-bottom:20px">
+      <div class="card"><div class="card-head"><h3>Health score</h3>${healthPill(h.st)}</div>
+        <div class="hc-top">${Charts.gauge(h.score / 100, 'Health', String(h.score))}<div><span>Machine state</span><div>${statusPill(Sim.status(m.id))}</div>
+          <span style="margin-top:8px">Energy today</span><b class="mono">${kwh == null ? '–' : `${fmtNum(kwh, 1)} kWh`}</b>${kwh != null && made > 0 ? `<span class="mono" style="font-size:12px">${fmtNum(kwh * 1000 / made, 1)} Wh per piece</span>` : ''}</div></div></div>
+      <div class="card"><div class="card-head"><h3>Maintenance counters</h3></div>${mt ? `
+        <div class="mcount"><span>Running hours since PM <b class="mono">${fmtNum(mt.runH)} / ${fmtNum(mt.pmHours)} h</b></span>${meter(mt.pmPct, mt.pmPct >= 1 ? 'crit' : mt.pmPct >= 0.9 ? 'warn' : 'good')}<small>Last PM ${fmtDT(mt.lastPM)}</small></div>
+        ${mt.toolLimit ? `<div class="mcount"><span>${esc(mt.toolName)} since ${esc(mt.toolEvent.toLowerCase())} <b class="mono">${fmtNum(mt.toolCount)} / ${fmtNum(mt.toolLimit)}</b></span>${meter(mt.toolPct, mt.toolPct >= 1 ? 'crit' : mt.toolPct >= 0.9 ? 'warn' : 'good')}<small>Last change ${fmtDT(mt.lastTool)}</small></div>` : ''}` : '<div class="empty">No maintenance plan.</div>'}</div>
+      <div class="card"><div class="card-head"><h3>Recommended actions</h3></div><ul class="acts-list">${acts.length ? acts.map(a => `<li class="${a.sev}">${ic(a.sev === 'crit' ? 'warn' : 'wrench')}<span>${esc(a.text)}</span></li>`).join('') : `<li class="good">${ic('check')}<span>No action needed. Keep to the normal PM plan.</span></li>`}</ul></div></div>
+    <h2 class="sec-title">${ic('sensor')}Live sensors</h2>
+    <div class="grid g3" style="margin-bottom:20px">${ss.map(s => sensorTile(s, from, to)).join('')}</div>
+    <div class="card-head"><h2 class="sec-title" style="margin:0">${ic('pulse')}Sensor trends <span class="hint">shaded bands are the warning and critical zones</span></h2>${csvBtn('export', 'hsens')}</div>
+    <div class="grid g2" style="margin-bottom:20px">${series.map(({ s, pts }) => { const pr = Health.predict(s); return `<div class="card"><div class="card-head"><h3>${esc(s.name)} <span class="hint">${esc(s.unit)}</span></h3>${pr ? pill(pr.to === 'critical' ? 'crit' : 'warn', `${pr.to} in ${fmtETA(pr.hours)}`) : ''}</div>${chart(W => Charts.trend(pts, s, { W }))}</div>`; }).join('')}</div>
+    ${envCards(m.id, from, to)}
+    <div class="card"><div class="card-head"><h3>Maintenance log</h3>${csvBtn('export', 'hlog')}</div>${table('hlog', [
+      { h: 'Datetime', f: x => `<span class="mono">${fmtDT(x.at)}</span>` }, { h: 'Type', f: x => pill(x.kind === 'repair' ? 'crit' : x.kind === 'inspect' ? 'idle' : 'accent', MAINT_KIND[x.kind]) },
+      { h: 'Note', f: x => esc(x.note) }, { h: 'By', f: x => esc(x.by) }], log, { pageSize: 5, empty: 'No maintenance recorded yet.' })}</div>`;
+}
+function maintForm(mid) {
+  const m = DB.asset(mid); const mt = DB.cfg.maint[mid];
+  openModal({
+    title: `Record maintenance · ${m.name}`,
+    body: row('Type', `<div class="radio-group">${Object.entries(MAINT_KIND).filter(([k]) => k !== 'tool' || mt.toolLimit).map(([k, l], i) => `<label><input type="radio" name="mx-kind" value="${k}" ${i === 0 ? 'checked' : ''}>${k === 'tool' ? esc(mt.toolEvent) : l}</label>`).join('')}</div>`) +
+      row('Note', `<textarea class="input" id="mx-note" rows="3" placeholder="What was done, parts used"></textarea>`, 'mx-note', true) +
+      `<p style="margin:0;font-size:12.5px;color:var(--muted)">Preventive maintenance resets the running-hour counter. ${mt.toolLimit ? `${esc(mt.toolEvent)} resets the ${esc(mt.toolName.toLowerCase())} counter. ` : ''}Repair or PM clears wear found by the sensors.</p>`,
+    onSave: () => {
+      const kind = document.querySelector('input[name=mx-kind]:checked').value; const note = fv('mx-note');
+      if (!setErr('mx-note', note ? '' : 'Write a short note so the next shift knows what was done.')) return;
+      Health.record(mid, kind, note, S.user.username); closeModal(); toast(`${esc(kind === 'tool' ? mt.toolEvent : MAINT_KIND[kind])} recorded for ${esc(m.name)}.`, 'good'); render();
+    },
+  });
 }
 
 function pDaily() {
@@ -1215,6 +1318,68 @@ function ruleForm(r) {
   });
 }
 
+/* ---------- sensor ---------- */
+function pSensor() {
+  const ed = canEdit('sensor_setup');
+  const owners = [...new Set(DB.cfg.sensors.map(s => s.assetId))].filter(id => DB.asset(id));
+  const list = Health.sensors().filter(s => !S.sensorAsset || s.assetId === S.sensorAsset);
+  const machines = DB.cfg.assets.filter(a => a.isMachine && DB.cfg.maint[a.id]);
+  EXPORTS.sens = () => exportCSV('Sensor_Setting', ['Asset', 'Sensor', 'Unit', 'Normal', 'Warning', 'Critical', 'Alarm side', 'Alarm'], list.map(s => [DB.asset(s.assetId).name, s.name, s.unit, s.nom, s.warn ?? '', s.crit ?? '', s.dir === 'lo' ? 'Low' : 'High', s.alarm ? 'Yes' : 'No']));
+  return adminHead('Sensor Setting', `<select class="input" id="sens-asset" aria-label="Filter by asset" style="width:auto"><option value="">All assets</option>${owners.map(id => `<option value="${id}" ${S.sensorAsset === id ? 'selected' : ''}>${esc(DB.asset(id).name)}</option>`).join('')}</select>${btnEx('sens')}`, 'Limits for each sensor. A reading past the warning or critical limit raises a sensor alarm (LINE for warning, Email + LINE for critical).') +
+    `<div class="card" style="margin-bottom:20px">${table('sensors', [
+      { h: 'Asset', f: s => esc(DB.asset(s.assetId).name) }, { h: 'Sensor', f: s => ed ? `<button class="link" data-act="sensor-edit" data-arg="${s.id}">${esc(s.name)}</button>` : esc(s.name) },
+      { h: 'Unit', f: s => esc(s.unit) }, { h: 'Normal', cls: 'num', f: s => fmtNum(s.nom, s.dec) }, { h: 'Warning', cls: 'num', f: s => s.warn == null ? '–' : fmtNum(s.warn, s.dec) }, { h: 'Critical', cls: 'num', f: s => s.crit == null ? '–' : fmtNum(s.crit, s.dec) },
+      { h: 'Alarm side', f: s => s.warn == null ? '–' : s.dir === 'lo' ? 'Low' : 'High' }, { h: 'Alarm', f: s => s.alarm ? pill('good', 'On') : pill('idle', 'Off') },
+      { h: 'Live value', cls: 'num', f: s => `<span class="mono">${fmtNum(Health.gen(s).cur, s.dec)}</span>` }, { h: 'Status', f: s => s.warn == null ? '' : lvlPill(Health.gen(s).lvl) }], list, { pageSize: 12 })}</div>
+    <div class="card"><div class="card-head"><h3>Maintenance plan</h3></div>${table('maintplan', [
+      { h: 'Machine', f: m => ed ? `<button class="link" data-act="mplan-edit" data-arg="${m.id}">${esc(m.name)}</button>` : esc(m.name) }, { h: 'Type', f: m => esc(machineKind(m).kind) },
+      { h: 'PM every', cls: 'num', f: m => `${fmtNum(DB.cfg.maint[m.id].pmHours)} h` }, { h: 'Last PM', f: m => `<span class="mono">${fmtDT(DB.cfg.maint[m.id].lastPM)}</span>` },
+      { h: 'Wear counter', f: m => esc(DB.cfg.maint[m.id].toolName || '–') }, { h: 'Limit', cls: 'num', f: m => DB.cfg.maint[m.id].toolLimit ? fmtNum(DB.cfg.maint[m.id].toolLimit) : '–' }], machines, { pageSize: 8 })}</div>`;
+}
+function sensorForm(s) {
+  openModal({
+    title: `Edit sensor · ${DB.asset(s.assetId).name}`,
+    body: row('Sensor name', `<input class="input" id="fs-name" value="${esc(s.name)}">`, 'fs-name', true) +
+      row(`Normal (${s.unit})`, `<input class="input" type="number" step="any" id="fs-nom" value="${s.nom}" style="width:140px">`, 'fs-nom', true) +
+      row('Alarm side', `<div class="radio-group"><label><input type="radio" name="fs-dir" value="hi" ${s.dir !== 'lo' ? 'checked' : ''}>High is bad</label><label><input type="radio" name="fs-dir" value="lo" ${s.dir === 'lo' ? 'checked' : ''}>Low is bad</label></div>`) +
+      row(`Warning (${s.unit})`, `<input class="input" type="number" step="any" id="fs-warn" value="${s.warn ?? ''}" style="width:140px">`, 'fs-warn') +
+      row(`Critical (${s.unit})`, `<input class="input" type="number" step="any" id="fs-crit" value="${s.crit ?? ''}" style="width:140px">`, 'fs-crit') +
+      row('Raise alarm', `<button type="button" class="switch" role="switch" id="fs-alarm" aria-checked="${!!s.alarm}" data-act="switch"></button>`) +
+      `<p style="margin:0;font-size:12.5px;color:var(--muted)">Leave Warning and Critical empty to only record the value (no alarm, no health score).</p>`,
+    onSave: () => {
+      const num = id => fv(id) === '' ? null : Number(fv(id));
+      const d = { name: fv('fs-name'), nom: num('fs-nom'), dir: document.querySelector('input[name=fs-dir]:checked').value, warn: num('fs-warn'), crit: num('fs-crit') };
+      const sg = d.dir === 'lo' ? -1 : 1;
+      let ok = setErr('fs-name', d.name ? '' : 'Sensor name is required.');
+      ok = setErr('fs-nom', d.nom != null && isFinite(d.nom) ? '' : 'Enter the normal running value.') && ok;
+      ok = setErr('fs-warn', (d.warn == null) === (d.crit == null) ? '' : 'Set both limits, or leave both empty.') && ok;
+      if (ok && d.warn != null) {
+        ok = setErr('fs-warn', (d.warn - d.nom) * sg > 0 ? '' : `Warning must be ${d.dir === 'lo' ? 'below' : 'above'} the normal value.`);
+        ok = setErr('fs-crit', (d.crit - d.warn) * sg > 0 ? '' : `Critical must be ${d.dir === 'lo' ? 'below' : 'above'} the warning limit.`) && ok;
+      }
+      if (!ok) return;
+      Object.assign(s, d, { alarm: d.warn != null && document.getElementById('fs-alarm').getAttribute('aria-checked') === 'true' });
+      DB.save(); closeModal(); toast('Sensor saved.', 'good'); render();
+    },
+  });
+}
+function maintPlanForm(mid) {
+  const mt = DB.cfg.maint[mid];
+  openModal({
+    title: `Maintenance plan · ${DB.asset(mid).name}`,
+    body: row('PM every', `<div class="inline"><input class="input" type="number" min="1" id="fp-pm" value="${mt.pmHours}" style="width:120px"> running hours</div>`, 'fp-pm', true) +
+      (mt.toolLimit ? row(`${mt.toolName} limit`, `<div class="inline"><input class="input" type="number" min="1" id="fp-tool" value="${mt.toolLimit}" style="width:140px"> before ${esc(mt.toolEvent.toLowerCase())}</div>`, 'fp-tool', true) : ''),
+    onSave: () => {
+      const pm = Number(fv('fp-pm')); const tool = mt.toolLimit ? Number(fv('fp-tool')) : null;
+      let ok = setErr('fp-pm', pm > 0 ? '' : 'Enter running hours above 0.');
+      if (mt.toolLimit) ok = setErr('fp-tool', tool > 0 ? '' : 'Enter a limit above 0.') && ok;
+      if (!ok) return;
+      mt.pmHours = pm; if (tool) mt.toolLimit = tool;
+      DB.save(); closeModal(); toast('Maintenance plan saved.', 'good'); render();
+    },
+  });
+}
+
 /* ---------- banner ---------- */
 function pBanner() {
   const ed = canEdit('banner'); const list = S.bannerDraft || DB.cfg.banners;
@@ -1304,6 +1469,10 @@ const ACT = {
   ack(el) { const a = Sim.alarms.find(x => x.id === el.dataset.arg); if (a) { a.ackBy = S.user.username; a.ackAt = Date.now(); toast(`Acknowledged ${esc(a.name)}.`, 'good'); } refreshContent(); },
   'ack-all'() { const list = alarmScoped().filter(a => !a.ackBy); confirmBox('Acknowledge all alarms', `Mark ${list.length} open alarms in ${esc(scope().name)} as acknowledged by you?`, () => { list.forEach(a => { a.ackBy = S.user.username; a.ackAt = Date.now(); }); toast(`Acknowledged ${list.length} alarms.`, 'good'); refreshContent(); }, 'Acknowledge all'); },
   report(el) { openReport(+el.dataset.arg, el.dataset.kind); },
+  'h-range'(el) { S.hRange = el.dataset.arg; refreshContent(); },
+  'maint-rec'(el) { maintForm(el.dataset.arg); },
+  'sensor-edit'(el) { sensorForm(DB.cfg.sensors.find(s => s.id === el.dataset.arg)); },
+  'mplan-edit'(el) { maintPlanForm(el.dataset.arg); },
   'modal-close'() { closeModal(); },
   'modal-save'() { MODAL?.onSave?.(); },
   switch(el) { el.setAttribute('aria-checked', el.getAttribute('aria-checked') !== 'true'); },
@@ -1401,6 +1570,7 @@ document.addEventListener('change', e => {
   else if (t.id === 'loss-type') { S.lossType = t.value; t.blur(); refreshContent(); }
   else if (t.id === 'loss-by') { S.lossBy = t.value; t.blur(); refreshContent(); }
   else if (t.id === 'loss-top') { S.lossTop = +t.value; t.blur(); refreshContent(); }
+  else if (t.id === 'sens-asset') { S.sensorAsset = t.value; S.tables.sensors = { page: 1 }; render(); }
   else if (t.dataset.plan) { const [d, i, k] = t.dataset.plan.split(':'); S.planDraft.week[d][i][k] = t.value; }
   else if (t.id === 'plan-m' || t.id === 'plan-y') { const d = new Date(+fv('plan-y'), +fv('plan-m'), 1); S.planMonth = d.getTime(); render(); }
 });
@@ -1425,6 +1595,7 @@ Sim.listeners.add((kind, al, asset) => {
 });
 setInterval(() => {
   Sim.tick();
+  Health.tick();
   const c = document.getElementById('op-clock'); if (c) c.textContent = fmtTime(Date.now());
 }, 1000);
 setInterval(() => {
@@ -1436,5 +1607,6 @@ setInterval(() => {
 /* ---------- boot ---------- */
 DB.load();
 Sim.init();
+Health.init();
 setupRefresh();
 render();
