@@ -158,6 +158,28 @@ const Charts = {
     return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(s.name)} trend">${g}</svg>`;
   },
 
+  /* SPC control chart. gs: [{t, [key]}]; lines at cl/ucl/lcl (+ optional spec); bad(g) marks out-of-control points */
+  control(gs, key, { cl, ucl, lcl, spec = null, dec = 2, W = 900, H = 230, bad = () => false } = {}) {
+    if (!gs.length) return `<div class="chart-empty">No steady running data in this period.</div>`;
+    const vals = gs.map(g => g[key]); const lines = [cl, ucl, lcl, spec].filter(v => v != null);
+    let lo = Math.min(...vals, ...lines), hi = Math.max(...vals, ...lines);
+    const padY = (hi - lo) * 0.08 || 1; lo -= padY; hi += padY;
+    const L = 56, R = 70, T = 10, B = 24, w = W - L - R, h = H - T - B;
+    const x = i => L + (gs.length === 1 ? w / 2 : i * w / (gs.length - 1));
+    const y = v => T + h - (v - lo) / (hi - lo) * h;
+    let g = '';
+    for (let i = 0; i <= 4; i++) { const v = lo + (hi - lo) * i / 4, yy = y(v); g += `<line class="grid-line" x1="${L}" x2="${L + w}" y1="${yy}" y2="${yy}"/><text x="${L - 8}" y="${yy + 3.5}" text-anchor="end">${fmtNum(v, dec)}</text>`; }
+    const step = Math.max(1, Math.ceil(gs.length / Math.max(2, Math.floor(w / 90))));
+    gs.forEach((p, i) => { if (i % step === 0) g += `<text x="${x(i)}" y="${H - 6}" text-anchor="middle">${this.timeLabel(p.t, HOUR)}</text>`; });
+    [[ucl, '--crit', 'UCL', '5 4'], [cl, '--muted', 'CL', ''], [lcl, '--crit', 'LCL', '5 4'], [spec, '--warn', 'Limit', '2 3']].forEach(([v, c, l, d]) => {
+      if (v == null) return;
+      g += `<line x1="${L}" x2="${L + w}" y1="${y(v)}" y2="${y(v)}" style="stroke:var(${c});stroke-width:1.2${d ? `;stroke-dasharray:${d}` : ''}"/><text x="${L + w + 6}" y="${y(v) + 3.5}" style="fill:var(${c})">${l} ${fmtNum(v, dec)}</text>`;
+    });
+    g += `<path d="${gs.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p[key]).toFixed(1)}`).join('')}" style="fill:none;stroke:var(--accent);stroke-width:1.6"/>`;
+    gs.forEach((p, i) => { const b = bad(p); g += `<circle cx="${x(i)}" cy="${y(p[key])}" r="${b ? 4.5 : 2.8}" style="fill:var(${b ? '--crit' : '--accent'});stroke:var(--bg);stroke-width:1.5"><title>${esc(`${fmtDT(p.t)}\n${fmtNum(p[key], dec)}${p.flags.length ? '\n' + p.flags.join('\n') : ''}`)}</title></circle>`; });
+    return `<svg viewBox="0 0 ${W} ${H}" role="img">${g}</svg>`;
+  },
+
   spark(values, color, { W = 220, H = 44 } = {}) {
     const v = values.filter(x => x != null);
     if (v.length < 2) return '';

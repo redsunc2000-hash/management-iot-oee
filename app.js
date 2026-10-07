@@ -51,6 +51,10 @@ const ICON = {
   factory: '<path d="M3 21V10l6 4V10l6 4V6l6 4v11z"/>',
   pulse: '<path d="M3 12h4l2-5 4 10 2-5h6"/>',
   sensor: '<circle cx="12" cy="12" r="2"/><path d="M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8"/>',
+  bolt: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
+  spc: '<path d="M3 4v16h18"/><path d="M6 8h14M6 16h14" stroke-dasharray="2 2"/><path d="M6 13l3-3 3 2 3-4 3 2"/>',
+  clip: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2h6v2M9 11l2 2 4-4M9 17h6"/>',
+  part: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>',
   wrench: '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/>',
 };
 const ic = n => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[n] || ''}</svg>`;
@@ -68,8 +72,12 @@ const PAGES = {
   alarm: { mode: 'view', label: 'Alarm', icon: 'bell' },
   machine_detail: { mode: 'view', label: 'Machine Detail', icon: 'cpu' },
   machine_health: { mode: 'view', label: 'Machine Health', icon: 'pulse' },
+  energy: { mode: 'view', label: 'Energy', icon: 'bolt' },
+  spc: { mode: 'view', label: 'SPC', icon: 'spc' },
   daily_report: { mode: 'view', label: 'Daily Report', icon: 'report' },
   operation_input: { mode: 'operation', label: 'Operation Input', icon: 'sliders' },
+  work_order: { mode: 'operation', label: 'Work Order', icon: 'wrench' },
+  shift_log: { mode: 'operation', label: 'Shift Log', icon: 'clip' },
   availability_history: { mode: 'operation', label: 'Availability History', icon: 'clock' },
   performance_history: { mode: 'operation', label: 'Performance History', icon: 'gauge' },
   quality_history: { mode: 'operation', label: 'Quality History', icon: 'quality' },
@@ -81,6 +89,7 @@ const PAGES = {
   job: { mode: 'admin', label: 'Job', icon: 'job' },
   alarm_setup: { mode: 'admin', label: 'Alarm', icon: 'bell' },
   sensor_setup: { mode: 'admin', label: 'Sensor', icon: 'sensor' },
+  spare_part: { mode: 'admin', label: 'Spare Part', icon: 'part' },
   banner: { mode: 'admin', label: 'Banner', icon: 'image' },
   line_notify: { mode: 'admin', label: 'Line Notify', icon: 'msg' },
   access_log: { mode: 'admin', label: 'Access Log', icon: 'log' },
@@ -95,7 +104,7 @@ const S = {
   tables: {}, sel: {}, closed: new Set(), menuOpen: false, sideOpen: false,
   layoutFull: true, lossType: 'overall', lossBy: 'machine', lossTop: 5,
   opMachine: null, opQty: 1, opMode: 'pq', benchIds: null,
-  planAsset: 'p1', planMonth: startOfDay(now0), clip: null, search: {}, hRange: '24h', sensorAsset: '',
+  planAsset: 'p1', planMonth: startOfDay(now0), clip: null, search: {}, hRange: '24h', sensorAsset: '', eRange: 'today', spcRange: '24h', spcMid: null, spcSensor: null, woFilter: 'active',
   theme: (() => { try { return localStorage.getItem('oee-demo-theme') || 'system'; } catch (e) { return 'system'; } })(),
 };
 const app = document.getElementById('app');
@@ -386,7 +395,7 @@ function tickerHTML() {
 
 /* ---------- page dispatcher ---------- */
 function pageHTML() {
-  const fn = { overview: pOverview, plant_layout: pLayout, availability: pAvail, performance: pPerf, quality: pQuality, benchmark: pBench, job_tracking: pJobTrack, loss: pLoss, alarm: pAlarm, machine_detail: pMachine, machine_health: pHealth, daily_report: pDaily, operation_input: pOpInput, availability_history: pAvailHist, performance_history: pPerfHist, quality_history: pQualHist, asset: pAsset, role: pRole, user: pUser, plan_production: pPlan, reason: pReason, job: pJob, alarm_setup: pAlarmSetup, sensor_setup: pSensor, banner: pBanner, line_notify: pLineNotify, access_log: pAccessLog }[S.page];
+  const fn = { overview: pOverview, plant_layout: pLayout, availability: pAvail, performance: pPerf, quality: pQuality, benchmark: pBench, job_tracking: pJobTrack, loss: pLoss, alarm: pAlarm, machine_detail: pMachine, machine_health: pHealth, energy: pEnergy, spc: pSpc, daily_report: pDaily, operation_input: pOpInput, work_order: pWorkOrder, shift_log: pShiftLog, availability_history: pAvailHist, performance_history: pPerfHist, quality_history: pQualHist, asset: pAsset, role: pRole, user: pUser, plan_production: pPlan, reason: pReason, job: pJob, alarm_setup: pAlarmSetup, sensor_setup: pSensor, spare_part: pParts, banner: pBanner, line_notify: pLineNotify, access_log: pAccessLog }[S.page];
   try { return fn ? fn() : ''; } catch (e) { console.error(e); return `<div class="card">Something went wrong on this page: ${esc(e.message)}</div>`; }
 }
 function head(title, extra = '', sub = '') {
@@ -620,7 +629,9 @@ function pAlarm() {
   const sum = list => `${pill('warn', `Warning ${list.filter(a => a.severity === 'warning').length}`)} ${pill('crit', `Critical ${list.filter(a => a.severity === 'critical').length}`)} ${pill('idle', `Job ${list.filter(a => a.type === 'job').length}`)} ${pill('idle', `Machine ${list.filter(a => a.type === 'machine').length}`)}  ${pill('idle', `Sensor ${list.filter(a => a.type === 'sensor').length}`)}`;
   const cols = [{ h: 'Datetime', f: a => `<span class="mono">${fmtDT(a.at)}</span>` }, { h: 'Alarm Name', f: a => esc(a.name) }, { h: 'Severity', f: a => sevPill(a.severity) }, { h: 'Type', f: a => esc(a.type) }, { h: 'Asset / Job Name', f: a => esc(DB.asset(a.assetId)?.name) }, { h: 'Description', f: a => esc(a.desc) }];
   const canAck = canEdit('alarm');
-  const ackCol = { h: 'Action', cls: 'num', f: a => canAck ? `<button class="btn sm" data-act="ack" data-arg="${a.id}">Acknowledge</button>` : '' };
+  const canWo = canEdit('work_order');
+  const woBtn = a => { const w = a.woId && DB.cfg.workOrders.find(x => x.id === a.woId); return w ? `<button class="btn sm" data-act="wo-view" data-arg="${w.id}">${esc(w.no)}</button>` : canWo && DB.asset(a.assetId)?.isMachine ? `<button class="btn sm" data-act="wo-alarm" data-arg="${a.id}">${ic('wrench')}Work order</button>` : ''; };
+  const ackCol = { h: 'Action', cls: 'num', f: a => `<div class="acts">${woBtn(a)}${canAck ? `<button class="btn sm" data-act="ack" data-arg="${a.id}">Acknowledge</button>` : ''}</div>` };
   const histCols = cols.concat([{ h: 'Acknowledge By', f: a => esc(a.ackBy || '–') }, { h: 'Acknowledge Date', f: a => `<span class="mono">${fmtDT(a.ackAt)}</span>` }]);
   const toRow = a => [fmtDT(a.at), a.name, a.severity, a.type, DB.asset(a.assetId)?.name, a.desc, a.ackBy || '', fmtDT(a.ackAt)];
   const H = ['Datetime', 'Alarm Name', 'Severity', 'Type', 'Asset/Job Name', 'Description', 'Acknowledge By', 'Acknowledge Date'];
@@ -718,7 +729,8 @@ function healthMachine(m, rng, from, to) {
   const series = ss.map(s => ({ s, ...Health.series(s, from, to) }));
   EXPORTS.hsens = () => exportCSV(`Sensor_Data_${m.name}`, ['Datetime', ...ss.map(s => `${s.name} (${s.unit})`)], (series[0]?.pts || []).map((p, i) => [fmtDT(p.t), ...series.map(x => x.pts[i]?.v == null ? '' : x.pts[i].v.toFixed(3))]));
   EXPORTS.hlog = () => exportCSV(`Maintenance_Log_${m.name}`, ['Datetime', 'Type', 'Note', 'By'], log.map(x => [fmtDT(x.at), MAINT_KIND[x.kind], x.note, x.by]));
-  const rec = canEdit('machine_health') ? `<button class="btn primary" data-act="maint-rec" data-arg="${m.id}">${ic('wrench')}Record maintenance</button>` : '';
+  const rec = (canEdit('work_order') ? `<button class="btn" data-act="wo-health" data-arg="${m.id}">${ic('plus')}Work order</button>` : '') + (canEdit('machine_health') ? `<button class="btn primary" data-act="maint-rec" data-arg="${m.id}">${ic('wrench')}Record maintenance</button>` : '');
+  const wos = Maint.openFor(m.id); const parts = Maint.partsFor(m.id);
   return head('Machine Health', rng + rec, `${esc(h.kind)} · ${ss.length} sensors · ${esc(DB.path(m.parentId))}`) +
     `<div class="grid g3" style="margin-bottom:20px">
       <div class="card"><div class="card-head"><h3>Health score</h3>${healthPill(h.st)}</div>
@@ -733,6 +745,9 @@ function healthMachine(m, rng, from, to) {
     <div class="card-head"><h2 class="sec-title" style="margin:0">${ic('pulse')}Sensor trends <span class="hint">shaded bands are the warning and critical zones</span></h2>${csvBtn('export', 'hsens')}</div>
     <div class="grid g2" style="margin-bottom:20px">${series.map(({ s, pts }) => { const pr = Health.predict(s); return `<div class="card"><div class="card-head"><h3>${esc(s.name)} <span class="hint">${esc(s.unit)}</span></h3>${pr ? pill(pr.to === 'critical' ? 'crit' : 'warn', `${pr.to} in ${fmtETA(pr.hours)}`) : ''}</div>${chart(W => Charts.trend(pts, s, { W }))}</div>`; }).join('')}</div>
     ${envCards(m.id, from, to)}
+    <div class="grid g2" style="margin-bottom:20px">
+      <div class="card"><div class="card-head"><h3>Open work orders</h3></div>${wos.length ? `<ul class="hc-list">${wos.map(w => `<li>${ic('wrench')}<span><button class="link mono" data-act="wo-view" data-arg="${w.id}">${esc(w.no)}</button> ${esc(w.title)}</span>${woPill(w)}</li>`).join('')}</ul>` : '<div class="empty" style="padding:12px">No open work orders.</div>'}</div>
+      <div class="card"><div class="card-head"><h3>Spare parts for this machine</h3></div><ul class="hc-list">${parts.map(p => `<li>${ic('part')}<span>${esc(p.name)}</span><b style="margin-left:auto;color:var(${p.stock <= 0 ? '--crit' : p.stock <= p.min ? '--warn' : '--text'})">${fmtNum(p.stock)} ${esc(p.unit)}</b></li>`).join('')}</ul></div></div>
     <div class="card"><div class="card-head"><h3>Maintenance log</h3>${csvBtn('export', 'hlog')}</div>${table('hlog', [
       { h: 'Datetime', f: x => `<span class="mono">${fmtDT(x.at)}</span>` }, { h: 'Type', f: x => pill(x.kind === 'repair' ? 'crit' : x.kind === 'inspect' ? 'idle' : 'accent', MAINT_KIND[x.kind]) },
       { h: 'Note', f: x => esc(x.note) }, { h: 'By', f: x => esc(x.by) }], log, { pageSize: 5, empty: 'No maintenance recorded yet.' })}</div>`;
@@ -1443,6 +1458,7 @@ function registerLine(step = 1) {
    EVENTS
    ========================================================================== */
 const ACT = {
+  ...OPS_ACT,
   noop() { },
   pick(el) { if (el.dataset.arg !== 'pe') return toast('Asset Insight and System Config are not part of this demo.', 'warn'); S.picked = true; S.assetId = firstScope(); S.mode = pagesOf('view').length ? 'view' : pagesOf('operation').length ? 'operation' : 'admin'; S.page = pagesOf(S.mode)[0]; render(); },
   go(el) { const p = el.dataset.arg; if (menuLevel(p) === 'deny') return toast('You do not have access to that page.', 'warn'); S.page = p; S.mode = PAGES[p].mode; S.sideOpen = false; S.menuOpen = false; render(); },
@@ -1570,6 +1586,8 @@ document.addEventListener('change', e => {
   else if (t.id === 'loss-type') { S.lossType = t.value; t.blur(); refreshContent(); }
   else if (t.id === 'loss-by') { S.lossBy = t.value; t.blur(); refreshContent(); }
   else if (t.id === 'loss-top') { S.lossTop = +t.value; t.blur(); refreshContent(); }
+  else if (t.id === 'spc-m') { S.spcMid = t.value; S.spcSensor = null; t.blur(); refreshContent(); }
+  else if (t.id === 'spc-s') { S.spcSensor = t.value; t.blur(); refreshContent(); }
   else if (t.id === 'sens-asset') { S.sensorAsset = t.value; S.tables.sensors = { page: 1 }; render(); }
   else if (t.dataset.plan) { const [d, i, k] = t.dataset.plan.split(':'); S.planDraft.week[d][i][k] = t.value; }
   else if (t.id === 'plan-m' || t.id === 'plan-y') { const d = new Date(+fv('plan-y'), +fv('plan-m'), 1); S.planMonth = d.getTime(); render(); }

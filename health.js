@@ -325,8 +325,8 @@ const Health = {
     if (mt) {
       if (mt.pmPct >= 1) out.push({ sev: 'crit', text: `Preventive maintenance is overdue by ${fmtNum(mt.runH - mt.pmHours)} running hours. Schedule it at the next planned stop.` });
       else if (mt.pmPct >= 0.9) out.push({ sev: 'warn', text: `Preventive maintenance is due in ${fmtNum(mt.pmHours - mt.runH)} running hours. Book a slot with the planner.` });
-      if (mt.toolPct >= 1) out.push({ sev: 'crit', text: `${mt.toolName} passed the limit (${fmtNum(mt.toolCount)} of ${fmtNum(mt.toolLimit)}). Do the ${mt.toolEvent.toLowerCase()} now to protect quality.` });
-      else if (mt.toolPct >= 0.9) out.push({ sev: 'warn', text: `${mt.toolName} at ${Math.round(mt.toolPct * 100)}% of limit. Prepare parts for the ${mt.toolEvent.toLowerCase()}.` });
+      if (mt.toolPct >= 1) out.push({ sev: 'crit', text: `${mt.toolName} passed the limit (${fmtNum(mt.toolCount)} of ${fmtNum(mt.toolLimit)}). Do the ${mt.toolEvent.toLowerCase()} now to protect quality.${Maint.toolPartNote(mid)}` });
+      else if (mt.toolPct >= 0.9) out.push({ sev: 'warn', text: `${mt.toolName} at ${Math.round(mt.toolPct * 100)}% of limit. Prepare parts for the ${mt.toolEvent.toLowerCase()}.${Maint.toolPartNote(mid)}` });
     }
     return out;
   },

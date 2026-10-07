@@ -480,3 +480,14 @@ td a:hover, .link:hover { text-decoration: underline; }
   .cal button { min-height: 58px; padding: 4px; }
   .cal button .r { display: none; }
 }
+
+/* work order, shift log */
+.kvrow { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 12px; font-size: 13px; padding: 7px 0; border-bottom: 1px solid var(--line); }
+.kvrow > span { color: var(--muted); font-size: 12.5px; }
+.chk-list { display: grid; gap: 4px; }
+.chk-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px; flex-wrap: wrap; }
+.ho p { margin: 0 0 8px; font-size: 13px; line-height: 1.55; }
+.ho .ho-next { display: flex; gap: 8px; align-items: flex-start; padding: 8px 10px; border-radius: var(--r-sm); background: var(--warn-soft); margin: 0; }
+.ho .ho-next svg { width: 16px; height: 16px; flex: none; color: var(--warn); margin-top: 2px; }
+@media (max-width: 560px) { .kvrow { grid-template-columns: 1fr; gap: 2px; } }
+.link.mono { white-space: nowrap; }

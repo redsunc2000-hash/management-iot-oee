@@ -9,7 +9,7 @@
 'use strict';
 
 const HOUR = 3600e3, DAY = 864e5, HISTORY_DAYS = 31;
-const STORE_KEY = 'oee-demo-config-v3';
+const STORE_KEY = 'oee-demo-config-v4';
 
 /* ---------- small utils ---------- */
 function mulberry32(a) {
@@ -81,11 +81,14 @@ function seedConfig() {
     { id: 'mgr1', name: 'Manager plant 1.1', parentId: 'mgrp', menu: {}, assets: { p1: 'view' } },
     { id: 'opp', name: 'Operator parent', parentId: null, menu: Object.fromEntries(Object.keys(MENU).map(k => [k, MENU_KEYS[2].items.some(i => i.key === k) ? 'deny' : (MENU_KEYS[1].items.some(i => i.key === k) ? 'edit' : 'view')])), assets: {} },
     { id: 'opn', name: 'Air filter line operator', parentId: 'opp', menu: {}, assets: { p1: 'deny', zn: 'edit' } },
+    { id: 'mtp', name: 'Maintenance parent', parentId: null, menu: Object.fromEntries(Object.keys(MENU).map(k => [k, k === 'spare_part' || k === 'machine_health' ? 'edit' : MENU_KEYS[2].items.some(i => i.key === k) ? 'deny' : MENU_KEYS[1].items.some(i => i.key === k) ? 'edit' : 'view'])), assets: {} },
+    { id: 'mtn', name: 'Maintenance technician', parentId: 'mtp', menu: {}, assets: { p1: 'edit' } },
   ];
   const users = [
     { id: 'u1', username: 'admin', password: 'admin', fullName: 'Super Admin', email: 'admin@kankyo-solutions.example', roleId: 'super', active: true },
     { id: 'u2', username: 'manager', password: 'manager', fullName: 'Pimchanok S.', email: 'pimchanok@kankyo-solutions.example', roleId: 'mgr1', active: true },
     { id: 'u3', username: 'operator', password: 'operator', fullName: 'Arthit K.', email: 'arthit@kankyo-solutions.example', roleId: 'opn', active: true },
+    { id: 'u5', username: 'maint.tech', password: 'maint.tech', fullName: 'Somchai T.', email: 'somchai@kankyo-solutions.example', roleId: 'mtn', active: true },
     { id: 'u4', username: 'qc.lead', password: 'qc.lead', fullName: 'Narumon P.', email: 'narumon@kankyo-solutions.example', roleId: 'mgr1', active: false },
   ];
   const week = {}; for (let d = 0; d < 7; d++) week[d] = [{ s: '00:00', e: '23:59' }];
@@ -125,7 +128,7 @@ function seedConfig() {
   ];
   const stamp = { createdBy: 'admin', createdAt: today - 120 * DAY, updatedBy: 'admin', updatedAt: today - 30 * DAY };
   [assets, reasons, roles, users, alarmRules, banners].forEach(list => list.forEach(x => Object.assign(x, { ...stamp, ...x })));
-  return { version: 3, assets, reasons, roles, users, plans, jobs, alarmRules, banners, lineNotify, ...Health.seed(assets) };
+  return { version: 4, assets, reasons, roles, users, plans, jobs, alarmRules, banners, lineNotify, ...Health.seed(assets), ...Maint.seed(assets) };
 }
 
 const MENU_KEYS = [
@@ -133,14 +136,14 @@ const MENU_KEYS = [
     { key: 'overview', label: 'Overview' }, { key: 'plant_layout', label: 'Plant Layout' }, { key: 'availability', label: 'Availability' },
     { key: 'performance', label: 'Performance' }, { key: 'quality', label: 'Quality' }, { key: 'benchmark', label: 'Benchmark' },
     { key: 'job_tracking', label: 'Job Tracking' }, { key: 'loss', label: 'Loss' }, { key: 'alarm', label: 'Alarm' },
-    { key: 'machine_detail', label: 'Machine Detail' }, { key: 'machine_health', label: 'Machine Health' }, { key: 'daily_report', label: 'Daily Report' }] },
+    { key: 'machine_detail', label: 'Machine Detail' }, { key: 'machine_health', label: 'Machine Health' }, { key: 'energy', label: 'Energy' }, { key: 'spc', label: 'SPC' }, { key: 'daily_report', label: 'Daily Report' }] },
   { group: 'Operation mode', mode: 'operation', items: [
-    { key: 'operation_input', label: 'Operation Input' }, { key: 'availability_history', label: 'Availability History' },
+    { key: 'operation_input', label: 'Operation Input' }, { key: 'work_order', label: 'Work Order' }, { key: 'shift_log', label: 'Shift Log' }, { key: 'availability_history', label: 'Availability History' },
     { key: 'performance_history', label: 'Performance History' }, { key: 'quality_history', label: 'Quality History' }] },
   { group: 'Admin mode', mode: 'admin', items: [
     { key: 'asset', label: 'Asset' }, { key: 'role', label: 'Role' }, { key: 'user', label: 'User' },
     { key: 'plan_production', label: 'Plan Production' }, { key: 'reason', label: 'Reason' }, { key: 'job', label: 'Job' },
-    { key: 'alarm_setup', label: 'Alarm' }, { key: 'sensor_setup', label: 'Sensor' }, { key: 'banner', label: 'Banner' }, { key: 'line_notify', label: 'Line Notify' },
+    { key: 'alarm_setup', label: 'Alarm' }, { key: 'sensor_setup', label: 'Sensor' }, { key: 'spare_part', label: 'Spare Part' }, { key: 'banner', label: 'Banner' }, { key: 'line_notify', label: 'Line Notify' },
     { key: 'access_log', label: 'Access Log' }] },
 ];
 
@@ -149,7 +152,7 @@ const DB = {
   cfg: null,
   load() {
     try { const raw = localStorage.getItem(STORE_KEY); if (raw) { this.cfg = JSON.parse(raw); } } catch (e) { /* storage unavailable */ }
-    if (!this.cfg || this.cfg.version !== 3) this.cfg = seedConfig();
+    if (!this.cfg || this.cfg.version !== 4) this.cfg = seedConfig();
     this.index();
   },
   save() { this.index(); try { localStorage.setItem(STORE_KEY, JSON.stringify(this.cfg)); } catch (e) { /* quota or blocked */ } },
