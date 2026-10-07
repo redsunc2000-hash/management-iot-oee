@@ -175,7 +175,8 @@ select.input[multiple] { background-image: none; padding-right: 12px; min-height
 .field label .req { color: var(--crit); }
 .field .err { color: var(--crit); font-size: 12px; min-height: 0; }
 .brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 700; font-size: 17px; letter-spacing: -.01em; }
-.brand-mark { width: 36px; height: 36px; border-radius: 11px; box-shadow: var(--raise-sm); display: grid; place-items: center; }
+.brand-logo { width: 40px; height: 40px; flex: none; object-fit: contain; }
+.brand-logo.sm { width: 30px; height: 30px; }
 .brand small { display: block; font-family: var(--font-body); font-weight: 500; font-size: 11px; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
 .app-pick { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
 .app-tile { border: 0; background: var(--bg); box-shadow: var(--raise-sm); border-radius: var(--r-md); padding: 18px 10px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; color: var(--text); }

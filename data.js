@@ -39,7 +39,7 @@ function seedConfig() {
   const A = (id, name, code, parentId) => ({ id, name, code, parentId, isMachine: false });
   const M = (id, name, code, parentId, rate) => ({ id, name, code, parentId, isMachine: true, rate, uom: 'ea' });
   const assets = [
-    A('p1', 'Kankyo Solution', '001', null),
+    A('p1', 'Kankyo Solutions', '001', null),
     A('zn', 'Air Filter Zone', '001_2', 'p1'),
     A('ln', 'Air Purifier Filter line A', '001_2_1', 'zn'),
     M('m1', 'Filter Final Assembly machine', '001_2_1_m', 'ln', 180),
@@ -83,10 +83,10 @@ function seedConfig() {
     { id: 'opn', name: 'Air filter line operator', parentId: 'opp', menu: {}, assets: { p1: 'deny', zn: 'edit' } },
   ];
   const users = [
-    { id: 'u1', username: 'admin', password: 'admin', fullName: 'Super Admin', email: 'admin@kankyo-solution.example', roleId: 'super', active: true },
-    { id: 'u2', username: 'manager', password: 'manager', fullName: 'Pimchanok S.', email: 'pimchanok@kankyo-solution.example', roleId: 'mgr1', active: true },
-    { id: 'u3', username: 'operator', password: 'operator', fullName: 'Arthit K.', email: 'arthit@kankyo-solution.example', roleId: 'opn', active: true },
-    { id: 'u4', username: 'qc.lead', password: 'qc.lead', fullName: 'Narumon P.', email: 'narumon@kankyo-solution.example', roleId: 'mgr1', active: false },
+    { id: 'u1', username: 'admin', password: 'admin', fullName: 'Super Admin', email: 'admin@kankyo-solutions.example', roleId: 'super', active: true },
+    { id: 'u2', username: 'manager', password: 'manager', fullName: 'Pimchanok S.', email: 'pimchanok@kankyo-solutions.example', roleId: 'mgr1', active: true },
+    { id: 'u3', username: 'operator', password: 'operator', fullName: 'Arthit K.', email: 'arthit@kankyo-solutions.example', roleId: 'opn', active: true },
+    { id: 'u4', username: 'qc.lead', password: 'qc.lead', fullName: 'Narumon P.', email: 'narumon@kankyo-solutions.example', roleId: 'mgr1', active: false },
   ];
   const week = {}; for (let d = 0; d < 7; d++) week[d] = [{ s: '00:00', e: '23:59' }];
   const plans = { p1: { week, overrides: {} } };
@@ -107,12 +107,12 @@ function seedConfig() {
     });
   }
   const alarmRules = [
-    { id: 'al1', name: 'Machine Breakdown', severity: 'critical', type: 'machine', assetId: 'p1', aTarget: null, pTarget: null, qTarget: null, aReasons: ['r5'], qReasons: [], sendEmail: true, emails: ['maintenance@kankyo-solution.example'], sendLine: true, lines: ['ln1'] },
+    { id: 'al1', name: 'Machine Breakdown', severity: 'critical', type: 'machine', assetId: 'p1', aTarget: null, pTarget: null, qTarget: null, aReasons: ['r5'], qReasons: [], sendEmail: true, emails: ['maintenance@kankyo-solutions.example'], sendLine: true, lines: ['ln1'] },
     { id: 'al2', name: 'Change tool', severity: 'warning', type: 'machine', assetId: 'p1', aTarget: null, pTarget: null, qTarget: null, aReasons: ['r4'], qReasons: [], sendEmail: false, emails: [], sendLine: true, lines: ['ln1'] },
     { id: 'al3', name: 'Work piece stuck', severity: 'warning', type: 'machine', assetId: 'p1', aTarget: null, pTarget: null, qTarget: null, aReasons: ['r3'], qReasons: [], sendEmail: false, emails: [], sendLine: true, lines: ['ln1'] },
     { id: 'al4', name: 'MachineStop', severity: 'warning', type: 'machine', assetId: 'p1', aTarget: null, pTarget: null, qTarget: null, aReasons: ['r1', 'r2'], qReasons: [], sendEmail: false, emails: [], sendLine: false, lines: [] },
-    { id: 'al5', name: 'Top scratched', severity: 'critical', type: 'machine', assetId: 'zn', aTarget: null, pTarget: null, qTarget: null, aReasons: [], qReasons: ['q4'], sendEmail: true, emails: ['qc@kankyo-solution.example'], sendLine: false, lines: [] },
-    { id: 'al6', name: 'Water Filter Zone OEE below target', severity: 'warning', type: 'machine', assetId: 'zs', aTarget: 85, pTarget: 85, qTarget: 90, aReasons: [], qReasons: [], sendEmail: true, emails: ['plant.manager@kankyo-solution.example'], sendLine: false, lines: [] },
+    { id: 'al5', name: 'Top scratched', severity: 'critical', type: 'machine', assetId: 'zn', aTarget: null, pTarget: null, qTarget: null, aReasons: [], qReasons: ['q4'], sendEmail: true, emails: ['qc@kankyo-solutions.example'], sendLine: false, lines: [] },
+    { id: 'al6', name: 'Water Filter Zone OEE below target', severity: 'warning', type: 'machine', assetId: 'zs', aTarget: 85, pTarget: 85, qTarget: 90, aReasons: [], qReasons: [], sendEmail: true, emails: ['plant.manager@kankyo-solutions.example'], sendLine: false, lines: [] },
   ];
   const banners = [
     { id: 'b1', fileName: 'superapp-iot-smart-factory.jpg', hue: 214 },

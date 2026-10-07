@@ -1,6 +1,6 @@
-# Management IoT – Production Monitoring (OEE mock-up)
+# Kankyo IoT – Production Monitoring (OEE mock-up)
 
-Interactive mock-up of an OEE (Overall Equipment Effectiveness) monitoring web app for **Kankyo Solution**, a sample plant with an air filter line and a water filter line. Machine data is simulated in the browser and updates every second, so the app behaves like it is connected to real machines.
+Interactive mock-up of an OEE (Overall Equipment Effectiveness) monitoring web app for **Kankyo Solutions**, a sample plant with an air filter line and a water filter line. Machine data is simulated in the browser and updates every second, so the app behaves like it is connected to real machines.
 
 Built with plain **HTML, CSS and JavaScript**. There is no framework, no build step and no backend.
 

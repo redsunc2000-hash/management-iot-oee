@@ -241,9 +241,9 @@ function renderLogin(err) {
   const b = DB.cfg.banners;
   app.innerHTML = `<main class="login"><div class="login-card raise">
     <section class="login-hero" style="background:radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, hsl(${b[0]?.hue || 214} 70% 55%) 16%, transparent), transparent 60%)">
-      <div class="brand"><span class="brand-mark">${ic('factory')}</span><span>Management IoT<small>Production Monitoring</small></span></div>
+      <div class="brand"><img class="brand-logo" src="logo-mark.png" alt="" width="40" height="40"><span>Kankyo IoT<small>Production Monitoring</small></span></div>
       <div style="display:grid;gap:12px"><h1>Every machine, every minute, measured as OEE.</h1>
-      <p>IIoT monitoring for Kankyo Solution: availability, performance and quality from the line to the plant, with alarms when a machine needs attention.</p></div>
+      <p>IIoT monitoring for Kankyo Solutions: availability, performance and quality from the line to the plant, with alarms when a machine needs attention.</p></div>
       <div class="hero-gauges" aria-label="Plant OEE today">
         ${[['OEE', c.OEE], ['Avail.', c.A], ['Perf.', c.P], ['Quality', c.Q]].map(([l, v]) => `<div class="mini"><div><b style="color:var(${Charts.levelVar(v)})">${fmtPct(v)}</b><span>${l}</span></div></div>`).join('')}
       </div>
@@ -281,7 +281,7 @@ function renderLogin(err) {
 }
 function renderPicker() {
   app.innerHTML = `<main class="login"><div class="raise" style="padding:36px 32px;max-width:560px;width:100%;display:grid;gap:22px;text-align:center">
-    <div class="brand" style="justify-content:center"><span class="brand-mark">${ic('factory')}</span><span>Management IoT</span></div>
+    <div class="brand" style="justify-content:center"><img class="brand-logo" src="logo-mark.png" alt="" width="40" height="40"><span>Kankyo IoT</span></div>
     <p style="margin:0;color:var(--muted)">Please select application</p>
     <div class="app-pick">
       <button class="app-tile" data-act="pick" data-arg="pe">${ic('bench')}Production Monitoring</button>
@@ -350,7 +350,7 @@ function sideHTML() {
     ? `<nav class="side-admin" aria-label="Admin menu">${pagesOf('admin').map(k => `<button class="${S.page === k ? 'on' : ''}" data-act="go" data-arg="${k}">${ic(PAGES[k].icon)}${PAGES[k].label}</button>`).join('')}</nav>`
     : `<label class="field" style="gap:0"><span class="sr" hidden>Search assets</span><div style="position:relative"><input class="input" id="tree-search" placeholder="Search assets" value="${esc(S.search.tree || '')}" style="padding-right:34px" aria-label="Search assets"><span style="position:absolute;right:10px;top:9px;width:16px;height:16px;color:var(--faint)">${ic('search')}</span></div></label>
        <div class="tree" role="tree">${treeHTML()}</div>`;
-  return `<div class="brand">${ic('factory').replace('<svg', '<svg style="width:22px;height:22px;color:var(--accent)"')}<span>Management IoT<small>Production Monitoring</small></span></div>
+  return `<div class="brand"><img class="brand-logo sm" src="logo-mark.png" alt="" width="30" height="30"><span>Kankyo IoT<small>Production Monitoring</small></span></div>
     <div class="profile"><span class="avatar">${esc(initials)}</span>
       <button class="profile-btn" data-act="menu" aria-haspopup="menu" aria-expanded="${S.menuOpen}"><b>${esc(u.fullName)}</b><span>${esc(myRole()?.name || '')} ${ic('down').replace('<svg', '<svg style="width:12px;height:12px"')}</span><div class="mode-chip">${MODE_LABEL[S.mode]}</div></button>${menu}</div>${body}`;
 }
@@ -1267,7 +1267,7 @@ function registerLine(step = 1) {
   } else {
     openModal({
       title: 'LINE Notify · Select a chat',
-      body: `<p style="margin:0;color:var(--muted);font-size:13px">Choose where Management IoT should send notifications. (Simulated LINE consent screen.)</p>
+      body: `<p style="margin:0;color:var(--muted);font-size:13px">Choose where Kankyo IoT should send notifications. (Simulated LINE consent screen.)</p>
         <div class="radio-group" style="display:grid">${['1-on-1 chat with LINE Notify', 'GroupAdmin', 'GroupAdmin1', 'Maintenance shift B'].map((g, i) => `<label><input type="radio" name="lg" value="${esc(g)}" ${i === 0 ? 'checked' : ''}>${esc(g)}</label>`).join('')}</div>`,
       foot: `<button class="btn" data-act="modal-close" type="button">Cancel</button><button class="btn primary" data-act="line-agree" type="button">Agree and connect</button>`,
     });
